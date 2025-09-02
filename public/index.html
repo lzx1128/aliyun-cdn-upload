@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>文件上传管理</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div class="container">
+        <header>
+          <h1><i class="fas fa-cloud-upload-alt"></i> 文件上传管理</h1>
+          <p class="subtitle">现代化的文件上传与管理系统</p>
+        </header>
+
+        <!-- 浏览器文件上传 -->
+        <section class="card">
+          <h2 class="section-title">文件上传</h2>
+          <div
+            class="upload-area"
+            @click="triggerFileInput"
+            @dragenter.prevent="handleDragEnter"
+            @dragover.prevent="handleDragOver"
+            @dragleave.prevent="handleDragLeave"
+            @drop.prevent="handleDrop"
+            :class="{ 'dragover': isDragging }"
+          >
+            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+            <p class="upload-text">拖拽文件到此处或点击选择文件</p>
+            <p class="upload-hint">支持多种文件格式</p>
+            <input
+              type="file"
+              id="fileInput"
+              multiple
+              @change="handleFileSelect"
+              ref="fileInput"
+              style="display: none"
+            />
+          </div>
+          
+          <!-- 显示已选择的文件列表 -->
+          <div v-if="selectedFiles.length > 0" class="file-preview">
+            <div class="file-item-preview" v-for="(file, index) in selectedFiles" :key="index">
+              <div class="file-icon">
+                <i class="fas" :class="getFileIcon(getFileType(file.name))"></i>
+              </div>
+              <div class="file-info-container">
+                <div class="file-info-header">
+                  <div class="file-name">{{ file.name }}</div>
+                  <div class="file-size">{{ formatFileSize(file.size) }}</div>
+                </div>
+                <div class="file-meta-preview">
+                  <span class="file-type">{{ getFileType(file.name) }}</span>
+                </div>
+              </div>
+              <div class="file-actions-preview">
+                <button class="remove-file-btn" @click="removeFile(index)">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+            <div class="upload-actions" style="margin-top: 20px; text-align: center;">
+              <button class="btn btn-primary" @click="uploadFiles" :disabled="isUploading">
+                <span v-if="isUploading" class="spinner"></span>
+                <span v-else>上传文件</span>
+              </button>
+              <button class="btn btn-secondary" @click="clearSelectedFiles" style="margin-left: 10px;">
+                清空选择
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 文件列表 -->
+        <section class="card files-section">
+          <div class="section-header">
+            <h2 class="section-title">文件列表</h2>
+            <div class="section-actions">
+              <button
+                id="refreshBtn"
+                class="btn btn-primary"
+                @click="listFiles"
+              >
+                <i class="fas fa-sync-alt"></i> 刷新
+              </button>
+              <!-- <button
+                id="deleteAllBtn"
+                class="btn btn-danger"
+                :disabled="fileList.length === 0"
+                @click="deleteAllFiles"
+              >
+                <i class="fas fa-trash-alt"></i> 删除全部
+              </button> -->
+            </div>
+          </div>
+
+          <div id="statusMessage" v-if="statusMessage">
+            <div
+              :class="['status-message', statusType === 'success' ? 'status-success' : 'status-error']"
+            >
+              {{ statusMessage }}
+            </div>
+          </div>
+
+          <div class="file-list" id="fileList">
+            <div v-if="fileList.length === 0" class="empty-state">
+              <i class="fas fa-file-alt empty-icon"></i>
+              <h3>暂无文件</h3>
+              <p>上传的文件将显示在这里</p>
+            </div>
+
+            <div
+              v-else
+              class="file-item"
+              v-for="file in fileList"
+              :key="file.name"
+            >
+              <div class="file-icon-list">
+                <i class="fas" :class="getFileIcon(getFileType(file.name))"></i>
+              </div>
+              <div class="file-info">
+                <div class="file-name">{{ file.name }}</div>
+                <div class="file-meta">
+                  大小: {{ formatFileSize(file.size) }} | 修改时间: {{ new Date(file.lastModified).toLocaleString() }}
+                </div>
+              </div>
+              <div class="file-actions">
+                <button
+                  class="action-btn delete-btn"
+                  @click="deleteFile(file.name)"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="index.js"></script>
+  </body>
+</html>
