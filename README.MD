@@ -32,16 +32,20 @@ const client = new OSS({
 
 ### `POST /upload`
 
-上传文件到 OSS。\
+上传文件到 OSS。
 请求体需包含 `file` 字段。
 
+### `POST /uploadFromUrl`
 
+上传网络文件到 OSS
 
 ### `GET /listFiles`
 
 获取 OSS 文件列表。
 
+### `GET /download/:fileName`
 
+下载 OSS文件。
 
 ### `DELETE /deleteFileByName`
 
