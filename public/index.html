@@ -42,10 +42,14 @@
               style="display: none"
             />
           </div>
-          
+
           <!-- 显示已选择的文件列表 -->
           <div v-if="selectedFiles.length > 0" class="file-preview">
-            <div class="file-item-preview" v-for="(file, index) in selectedFiles" :key="index">
+            <div
+              class="file-item-preview"
+              v-for="(file, index) in selectedFiles"
+              :key="index"
+            >
               <div class="file-icon">
                 <i class="fas" :class="getFileIcon(getFileType(file.name))"></i>
               </div>
@@ -64,18 +68,68 @@
                 </button>
               </div>
             </div>
-            <div class="upload-actions" style="margin-top: 20px; text-align: center;">
-              <button class="btn btn-primary" @click="uploadFiles" :disabled="isUploading">
+            <div
+              class="upload-actions"
+              style="margin-top: 20px; text-align: center"
+            >
+              <button
+                class="btn btn-primary"
+                @click="uploadFiles"
+                :disabled="isUploading"
+              >
                 <span v-if="isUploading" class="spinner"></span>
                 <span v-else>上传文件</span>
               </button>
-              <button class="btn btn-secondary" @click="clearSelectedFiles" style="margin-left: 10px;">
+              <button
+                class="btn btn-secondary"
+                @click="clearSelectedFiles"
+                style="margin-left: 10px"
+              >
                 清空选择
               </button>
             </div>
           </div>
         </section>
-
+        <!-- 网络URL上传 -->
+        <section class="card">
+          <h2 class="section-title">网络文件上传</h2>
+          <div class="form-group">
+            <label class="form-label">文件URL</label>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="请输入文件的完整URL地址，例如：https://example.com/file.jpg"
+              v-model="networkFileUrl"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">保存文件名（可选）</label>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="如果不填写，将使用原文件名"
+              v-model="networkFileName"
+            />
+          </div>
+          <div class="upload-actions">
+            <button
+              class="btn btn-primary"
+              @click="uploadFromUrl"
+              :disabled="isUploading || !networkFileUrl"
+            >
+              <span v-if="isUploading" class="spinner"></span>
+              <span v-else>从URL上传</span>
+            </button>
+            <button
+              class="btn btn-secondary"
+              @click="clearNetworkUrl"
+              style="margin-left: 10px"
+              :disabled="isUploading"
+            >
+              清空
+            </button>
+          </div>
+        </section>
         <!-- 文件列表 -->
         <section class="card files-section">
           <div class="section-header">
@@ -126,10 +180,17 @@
               <div class="file-info">
                 <div class="file-name">{{ file.name }}</div>
                 <div class="file-meta">
-                  大小: {{ formatFileSize(file.size) }} | 修改时间: {{ new Date(file.lastModified).toLocaleString() }}
+                  大小: {{ formatFileSize(file.size) }} | 修改时间: {{ new
+                  Date(file.lastModified).toLocaleString() }}
                 </div>
               </div>
               <div class="file-actions">
+                <button
+                  class="action-btn download-btn"
+                  @click="downloadFile(file.name)"
+                >
+                  <i class="fas fa-download"></i>
+                </button>
                 <button
                   class="action-btn delete-btn"
                   @click="deleteFile(file.name)"

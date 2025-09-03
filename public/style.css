@@ -571,6 +571,9 @@
   .delete-btn {
     background: var(--danger);
   }
+  .download-btn {
+    background: var(--primary);
+  }
   
   .action-btn:hover {
     transform: scale(1.1);

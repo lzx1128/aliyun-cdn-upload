@@ -5,11 +5,15 @@ const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
 const app = express();
+const urllib = require("urllib");
+// const Duplex = require("stream").Duplex;
+// // 实例化双工流。
+// let stream = new Duplex();
 
 // 配置阿里云OSS客户端
 const client = new OSS({
   region: "oss-cn-beijing",
-  accessKeyId: "你的AccessKeyId",
+  accessKeyId: "你的AccessKeyID",
   accessKeySecret: "你的AccessKeySecret",
   bucket: "你的Bucket名称",
   secure: true,
@@ -24,20 +28,6 @@ app.use(express.urlencoded({ extended: true })); // 支持表单数据
 
 // 配置 multer 上传文件的存储方式（临时存储到 uploads 文件夹）
 const upload = multer({ dest: "uploads/" });
-
-const headers = {
-  // 指定Object的存储类型。
-  "x-oss-storage-class": "Standard",
-  // 指定Object的访问权限。
-  "x-oss-object-acl": "private",
-  // 通过文件URL访问文件时，指定以附件形式下载文件，下载后的文件名称定义为example.txt。
-  "Content-Disposition": 'attachment; filename="example.txt"',
-  // 设置Object的标签，可同时设置多个标签。
-  "x-oss-tagging": "Tag1=1&Tag2=2",
-  // 指定PutObject操作时是否覆盖同名目标Object。此处设置为true，表示禁止覆盖同名Object。
-  "x-oss-forbid-overwrite": "true",
-};
-
 // 上传接口
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {
@@ -73,7 +63,72 @@ app.post("/upload", upload.single("file"), async (req, res) => {
     res.status(500).json({ message: "上传失败", error: err.message });
   }
 });
-// 列出文件
+// 上传网络文件到 OSS
+app.post("/uploadFromUrl", async (req, res) => {
+  try {
+    const { url, fileName } = req.body;
+
+    // 参数验证
+    if (!url) {
+      return res.status(400).json({ message: "URL是必需的" });
+    }
+
+    // 如果没有提供文件名，则从URL中提取
+    let ossFileName = fileName;
+    if (!ossFileName) {
+      ossFileName = `uploads/${Date.now()}_${path.basename(url)}`;
+    }
+
+    // 获取网络文件流
+    const { res: readStream } = await urllib.request(url, {
+      streaming: true, // 返回 stream
+    });
+
+    // 上传到 OSS
+    const result = await client.putStream(ossFileName, readStream, {
+      headers: {
+        "x-oss-storage-class": "Standard",
+        "x-oss-object-acl": "private",
+        "x-oss-forbid-overwrite": "true",
+      },
+    });
+
+    res.json({
+      message: "上传成功",
+      url: result.url,
+      name: result.name,
+    });
+  } catch (err) {
+    console.error("上传失败:", err);
+    res.status(500).json({ message: "上传失败", error: err.message });
+  }
+});
+// 下载文件接口
+// 服务器代理下载接口（可选添加）
+app.get('/download/:fileName', async (req, res) => {
+  try {
+    const fileName = decodeURIComponent(req.params.fileName);
+    
+    // 通过流的方式直接传输文件
+    const result = await client.getStream(fileName);
+    
+    // 设置响应头
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    
+    // 将 OSS 流直接传输到客户端响应
+    result.stream.pipe(res);
+  } catch (error) {
+    console.error('OSS 下载失败:', error);
+    if (error.code === 'NoSuchKey') {
+      res.status(404).json({ error: '文件不存在' });
+    } else {
+      res.status(500).json({ error: '从 OSS 下载文件失败', message: error.message });
+    }
+  }
+});
+
+// 文件列表
 app.get("/listFiles", async (req, res) => {
   try {
     const result = await client.list({ "max-keys": 100 });

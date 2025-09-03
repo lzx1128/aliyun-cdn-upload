@@ -1,0 +1,7 @@
+# 依赖目录
+node_modules/
+.vscode/
+.idea/
+
+# 忽略 node_modules 中的所有文件
+node_modules/**/*
